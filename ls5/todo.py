@@ -1,4 +1,5 @@
 import flet as ft
+import json
 
 
 class Task(ft.UserControl):
@@ -74,10 +75,13 @@ class Task(ft.UserControl):
 
 
 class TodoApp(ft.UserControl):
-    def build(self):
-        self.new_task = ft.TextField(hint_text="Wash a car", expand=True)
+    def __init__(self):
+        super().__init__()
+        self.tasks_file = "tasks.json"
         self.tasks = ft.Column()
 
+    def build(self):
+        self.new_task = ft.TextField(hint_text="Wash a car", expand=True)
         self.filter = ft.Tabs(
             selected_index=0,
             on_change=self.tabs_changed,
@@ -89,19 +93,16 @@ class TodoApp(ft.UserControl):
             width=800,
             controls=[
                 ft.Row(
-                    controls=[self.new_task,
-                              ft.FloatingActionButton(
-                                  icon=ft.icons.ADD, on_click=self.add_task),
-                              ],
-                ), ft.Column(
+                    controls=[self.new_task, ft.FloatingActionButton(
+                        icon=ft.icons.ADD, on_click=self.add_task)],
+                ),
+                ft.Column(
                     spacing=20,
                     controls=[
                         self.filter,
                         self.tasks,
                     ]
-
                 )
-
             ]
         )
 
@@ -121,17 +122,43 @@ class TodoApp(ft.UserControl):
         self.update()
 
     def task_status_change(self, task):
+        self.save_tasks_to_file()
         self.update()
+
+    def save_tasks_to_file(self):
+        tasks_data = [{
+            'task_name': task.task_name,
+            'completed': task.completed
+        } for task in self.tasks.controls]
+
+        with open(self.tasks_file, 'w') as file:
+            json.dump(tasks_data, file)
+
+    def load_tasks_from_file(self):
+        try:
+            with open(self.tasks_file, 'r') as file:
+                tasks_data = json.load(file)
+
+            for task_data in tasks_data:
+                task = Task(task_data['task_name'],
+                            self.delete_task, self.task_status_change)
+                task.completed = task_data['completed']
+                self.tasks.controls.append(task)
+
+        except FileNotFoundError:
+            pass
 
     def add_task(self, e):
         task = Task(self.new_task.value, self.delete_task,
                     self.task_status_change)
         self.tasks.controls.insert(0, task)
         self.new_task.value = ""
+        self.save_tasks_to_file()
         self.update()
 
     def delete_task(self, task):
         self.tasks.controls.remove(task)
+        self.save_tasks_to_file()
         self.update()
 
 
@@ -141,6 +168,7 @@ def main(page: ft.Page):
     page.update()
 
     todo = TodoApp()
+    todo.load_tasks_from_file()
     page.add(todo)
 
 
