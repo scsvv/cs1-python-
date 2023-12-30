@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+</head>
+
+<body>
+    <h1>Shopping Cart</h1>
+    <section class="products">
+        {% for product in products %}
+        <div class="product">
+            <img src="{{product.img}}" alt="{{product.name}}">
+            <div class="namespace">
+                <h2>
+                    <a href="/{{product.id}}">{{product.name}}</a>
+                </h2>
+                <p>${{product.price}}</p>
+            </div>
+            <form action="/add_to_cart/{{product.id}}" method="post">
+                <button type="submit">Add to Cart</button>
+            </form>
+        </div>
+        {% endfor %}
+    </section>
+</body>
+
+</html>
